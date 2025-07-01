@@ -3,11 +3,10 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.advogadoonline.app',
   appName: 'Advogado Online',
-  webDir: 'capacitor-build',
+  webDir: 'out', // Este valor não será usado para deploy online, mas é um placeholder.
   server: {
-    url: process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : undefined,
-    cleartext: true,
-    androidScheme: 'https'
+    url: 'https://advogado-online-app.vercel.app', // 
+    cleartext: false // <-- MUDE PARA 'false' se sua URL for HTTPS (RECOMENDADO PARA PRODUÇÃO)
   },
   plugins: {
     SplashScreen: {
