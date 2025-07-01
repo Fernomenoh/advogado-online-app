@@ -1,6 +1,7 @@
- {
-  "buildCommand": "npx prisma generate && npm run build",
-  "installCommand": "npm install",
-  "outputDirectory": ".next"
- 
-}
+     {
+       "buildCommand": "npx prisma generate && npm run build",
+       "installCommand": "npm install",
+       "outputDirectory": ".next"
+       
+     }
+     
