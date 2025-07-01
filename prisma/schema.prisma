@@ -1,0 +1,274 @@
+// Schema para Advogado Online
+// Sistema de consultas jurídicas com IA
+
+
+generator client {
+  provider = "prisma-client-js"
+  // Certifique-se de que o caminho de saída aponta para onde o Next.js espera encontrar o cliente Prisma
+  // O caminho padrão é node_modules/.prisma/client
+  // Se você tem um arquivo lib/db.ts, ele geralmente importa de '@prisma/client'
+  // que resolve para node_modules/.prisma/client
+  // Vamos tentar um caminho relativo padrão, que geralmente funciona.
+  output = "./node_modules/.prisma/client" // Use este caminho relativo
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+// Modelo de usuário principal
+model User {
+  id          String   @id @default(cuid())
+  name        String
+  email       String   @unique
+  phone       String?
+  profession  String?
+  password    String
+  role        UserRole @default(USER)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  consultations Consultation[]
+  chats         Chat[]
+  messages      Message[]
+  payments      Payment[]
+  
+  // NextAuth
+  accounts Account[]
+  sessions Session[]
+
+  @@map("users")
+}
+
+// Modelo de advogado
+model Lawyer {
+  id          String       @id @default(cuid())
+  name        String
+  email       String       @unique
+  phone       String
+  oabNumber   String       @unique // Número da OAB
+  oabState    String       // Estado da OAB
+  biography   String?
+  experience  Int?         // Anos de experiência
+  rating      Float        @default(0)
+  totalCases  Int          @default(0)
+  isActive    Boolean      @default(true)
+  isVerified  Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // Relacionamentos
+  specialties    LawyerSpecialty[]
+  consultations  Consultation[]
+  chats          Chat[]
+  messages       Message[]
+
+  @@map("lawyers")
+}
+
+// Áreas do direito
+model LegalArea {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  specialties    LawyerSpecialty[]
+  consultations  Consultation[]
+
+  @@map("legal_areas")
+}
+
+// Especialidades dos advogados
+model LawyerSpecialty {
+  id          String   @id @default(cuid())
+  lawyerId    String
+  legalAreaId String
+  createdAt   DateTime @default(now())
+
+  // Relacionamentos
+  lawyer    Lawyer    @relation(fields: [lawyerId], references: [id], onDelete: Cascade)
+  legalArea LegalArea @relation(fields: [legalAreaId], references: [id], onDelete: Cascade)
+
+  @@unique([lawyerId, legalAreaId])
+  @@map("lawyer_specialties")
+}
+
+// Consultas jurídicas
+model Consultation {
+  id           String            @id @default(cuid())
+  userId       String
+  lawyerId     String?
+  legalAreaId  String
+  title        String
+  description  String
+  status       ConsultationStatus @default(PENDING)
+  priority     Priority          @default(MEDIUM)
+  aiResponse   String?           // Resposta inicial da IA
+  price        Float             @default(0)
+  estimatedTime Int?             // Tempo estimado em minutos
+  actualTime   Int?              // Tempo real gasto
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  completedAt  DateTime?
+
+  // Relacionamentos
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lawyer    Lawyer?   @relation(fields: [lawyerId], references: [id], onDelete: SetNull)
+  legalArea LegalArea @relation(fields: [legalAreaId], references: [id])
+  chat      Chat?
+  payment   Payment?
+
+  @@map("consultations")
+}
+
+// Chats entre usuários e advogados
+model Chat {
+  id             String   @id @default(cuid())
+  consultationId String   @unique
+  userId         String
+  lawyerId       String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relacionamentos
+  consultation Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lawyer       Lawyer?      @relation(fields: [lawyerId], references: [id], onDelete: SetNull)
+  messages     Message[]
+
+  @@map("chats")
+}
+
+// Mensagens dos chats
+model Message {
+  id           String      @id @default(cuid())
+  chatId       String
+  userSenderId String?
+  lawyerSenderId String?
+  senderType   SenderType
+  content      String
+  type         MessageType @default(TEXT)
+  isRead       Boolean     @default(false)
+  sentAt       DateTime    @default(now())
+
+  // Relacionamentos
+  chat   Chat    @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user   User?   @relation(fields: [userSenderId], references: [id], onDelete: SetNull)
+  lawyer Lawyer? @relation(fields: [lawyerSenderId], references: [id], onDelete: SetNull)
+
+  @@map("messages")
+}
+
+// Pagamentos (simulados para MVP)
+model Payment {
+  id             String        @id @default(cuid())
+  consultationId String        @unique
+  userId         String
+  amount         Float
+  status         PaymentStatus @default(PENDING)
+  method         PaymentMethod @default(CREDIT_CARD)
+  transactionId  String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // Relacionamentos
+  consultation Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+// NextAuth models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// Enums
+enum UserRole {
+  USER
+  ADMIN
+  LAWYER
+}
+
+enum ConsultationStatus {
+  PENDING
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum MessageType {
+  TEXT
+  FILE
+  SYSTEM
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CREDIT_CARD
+  DEBIT_CARD
+  PIX
+  BANK_TRANSFER
+}
+
+enum SenderType {
+  USER
+  LAWYER
+}
