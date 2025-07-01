@@ -2,6 +2,5 @@
   "buildCommand": "npx prisma generate && npm run build",
   "installCommand": "npm install",
   "outputDirectory": ".next"
-  // A linha "root": "." NÃO DEVE ESTAR AQUI.
-  // Certifique-se de que não há vírgula após "outputDirectory": ".next" se for a última propriedade.
+ 
 }
