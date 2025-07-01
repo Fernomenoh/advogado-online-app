@@ -3,13 +3,13 @@
 
 
 generator client {
+
   provider = "prisma-client-js"
-  // Certifique-se de que o caminho de saída aponta para onde o Next.js espera encontrar o cliente Prisma
-  // O caminho padrão é node_modules/.prisma/client
-  // Se você tem um arquivo lib/db.ts, ele geralmente importa de '@prisma/client'
-  // que resolve para node_modules/.prisma/client
-  // Vamos tentar um caminho relativo padrão, que geralmente funciona.
-  output = "./node_modules/.prisma/client" // Use este caminho relativo
+  // O caminho de saída deve ser relativo à raiz do seu projeto (onde está o package.json)
+  // O padrão é node_modules/.prisma/client, que é onde o @prisma/client espera estar.
+  // Se seu schema.prisma está em prisma/, o caminho relativo para a raiz do node_modules é ../node_modules
+  output = "../node_modules/.prisma/client" // <-- Mude para ESTE CAMINHO
+
 }
 
 datasource db {
